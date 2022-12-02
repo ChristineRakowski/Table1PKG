@@ -9,14 +9,32 @@
 ##' @return vector of sample size, mean, median, and p-value for test of differences (nonpar and par)
 ##' @author C. Rakowski
 ##' @export
-##' 
-##' 
+##'
+##'
 library(tidyverse)
 numeric_fun <- function(data, outcome, var){
-        outcome <- enquo(outcome)       # quote
-        var <- enquo(var)               # quote
-        data %>% 
-                group_by(!!outcome) %>%
-                summarize(N= n(), mean=mean(!!var), median=median(!!var))
+        # need {{ }} to use dplyr with input variable names
+        # summary stats
+        temp <- data %>%
+                group_by({{outcome}}) %>%
+                summarize(N= n(), m=mean({{var}}), med=median({{var}}))
+
+        # tests of differences
+        # quote the variables and create formula
+        outcome <- deparse(substitute(outcome))
+        var <- deparse(substitute(var))
+        frm <- paste(var,outcome, sep="~")
+
+        # aov
+        #perform aov and store p-value
+        test<- aov(formula(frm), data)
+        sum_test = unlist(summary(test))
+        para_pval <- sum_test["Pr(>F)1"]
+
+        # Kruskal-Wallis non-parametric rank-sum test
+        test<- kruskal.test(formula(frm), data = data)
+        sum_test = unlist(test)
+        nonpara_pval <- sum_test["p.value"]
+        return(c(temp, para_pval, nonpara_pval))
 }
 
