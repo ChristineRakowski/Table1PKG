@@ -3,21 +3,40 @@
 \name{numeric_fun}
 \alias{numeric_fun}
 \title{Numeric summary}
+\usage{
+numeric_fun(data, outcome, var)
+}
 \arguments{
-\item{data}{data set}
+\item{data}{data set with a two-level outcome and numerical/categorical covariates}
 
-\item{outcome}{categorical grouping variable}
+\item{outcome}{name of categorical grouping variable, must have two levels, string}
 
-\item{var}{name of numerical covariate in the data set}
+\item{var}{name of numerical covariate in the data set, string}
 }
 \value{
-vector of sample size, mean, median, and p-value for test of differences (nonpar and par)
+A list of six items.
+\itemize{
+\item the \code{outcome} variable and its levels
+\item \code{N} a vector of counts of \code{var}, sorted by levels of \code{outcome}
+\item \code{mean} a vector of means of \code{var}, sorted by levels of \code{outcome}
+\item \code{median} a vector of medians of \code{var}, sorted by levels of \code{outcome}
+\item \code{para_pval} is the parametric p-value for test of differences of \code{var} using an
+ANOVA test
+\item \code{nonpara_pval} is a non-parametric p-value for test of differences of \code{var} using
+the Kruskal-Wallis test
+}
 }
 \description{
-Description: To produce summary stats for a numeric variable
+\code{numeric_fun()} will produce the sample size, mean, median
+and a test of differences via parametric p-value (ANOVA) and non-parametric p-value
+(Kruskal-Wallis test). These summaries can be used in a crude preliminary Table 1 to share
+with researchers in the beginning stages of analysis.
 }
 \details{
-We want to produce sample size, mean, median, and test of differences
+Summary statistics for a numerical covariate and a two-level outcome
+}
+\examples{
+numeric_fun(data=FEV, outcome="smoke", var="age")
 }
 \author{
 C. Rakowski
