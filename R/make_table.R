@@ -15,6 +15,8 @@
 ##' @param cat_vec vector of names of categorical covariates (strings) in the data set
 ##' @param num_vec vector of names of numerical covariates (strings) in the data set
 ##' @param digits number of digits to display, default is 2
+##' @param span boolean, for whether to include StD for numeric; default is FALSE
+##' @param total boolean, for whether to include an overall column; default is FALSE
 ##' @return A table.
 ##' First two columns will have variables names, levels, and names of descriptive statistics.
 ##' Third and fourth columns will have the summary statistics for levels 1 and 2 of the outcome.
@@ -29,82 +31,102 @@
 ##' make_table(data=FEV, outcome="smoke", cat_vec="sex", num_vec=c("age", "height", "fev"))
 
 
-make_table <- function(data, outcome, num_vec, cat_vec, digits =2){
+make_table <- function(data, outcome, num_vec=NULL, cat_vec=NULL,
+                       digits =2, span = FALSE, total=FALSE){
         # dictionary for storing all variable info
         # create keys for each variable
         var_names <- hash(keys=c(num_vec, cat_vec),
                           values=c(num_vec, cat_vec))
 
         # store numeric info
-        for(v in unlist(lst(num_vec))){
-                temp <- numeric_fun(data=data, outcome=outcome, var=v)
-                var_names[v] <- hash(c("N", "mean", "median", "para_p", "nonpara_p"),
+        if(!is.null(num_vec)){
+                for(v in unlist(lst(num_vec))){
+                        temp <- numeric_fun(data=data, outcome=outcome, var=v, span=span)
+                        var_names[v] <- hash(c("N", "mean", "median", "para_p", "nonpara_p"),
                                            temp[-1])
-        }
+                        }
+                }
 
         #store categorical info
-        for(v in unlist(lst(cat_vec))){
-                temp <- cat_fun(data=data, outcome=outcome, var=v)
-                var_names[v] <- hash(c("cont_table",  "para_p", "nonpara_p"),
+        if(!is.null(cat_vec)){
+                for(v in unlist(lst(cat_vec))){
+                        temp <- cat_fun(data=data, outcome=outcome, var=v)
+                        var_names[v] <- hash(c("cont_table",  "para_p", "nonpara_p"),
                                            temp)
-        }
+                        }
+                }
 
 
         #make data frame for table
         dat<- data.frame(matrix(c("var", "type",
-                                  as.integer(1), as.integer(1),
+                                  as.integer(1), as.integer(1), as.integer(1),
                                   as.numeric(1.00), as.numeric(1.00)),
-                                ncol=6)
+                                ncol=7)
                          )
-        colnames(dat) <- c("var", "type", "out1", "out2", "para_p", "nonpara_p")
+
+        colnames(dat) <- c("var", "type", "total", "out1", "out2", "para_p", "nonpara_p")
+
         # store numeric rows
-        for(v in unlist(lst(num_vec))){
-                v.para_p <- var_names[[v]]$para_p
-                v.nonpara_p <- var_names[[v]]$nonpara_p
-                #counts
-                dat <- rbind(dat, c(v,
-                                    "N",
-                                    var_names[[v]]$N[1],
-                                    var_names[[v]]$N[2],
-                                    v.para_p,
-                                    v.nonpara_p))
-                # means
-                # blanks for grouping purposes since collapes_rows didn't work
-                dat <- rbind(dat, c(v,
-                                    "Mean",
-                                    round(var_names[[v]]$mean[1], digits),
-                                    round(var_names[[v]]$mean[2], digits),
-                                    "",
-                                    ""))
+        if(!is.null(num_vec)){
+                for(v in unlist(lst(num_vec))){
+                        v.para_p <- var_names[[v]]$para_p
+                        v.nonpara_p <- var_names[[v]]$nonpara_p
+                        #counts
+                        dat <- rbind(dat, c(v,
+                                            "N",
+                                            var_names[[v]]$N[3],
+                                            var_names[[v]]$N[1],
+                                            var_names[[v]]$N[2],
+                                            v.para_p,
+                                            v.nonpara_p))
+                        # means
+                        # blanks for grouping purposes since collapse_rows didn't work
+                        dat <- rbind(dat, c(v,
+                                            ifelse(span==TRUE,
+                                                   "Mean (SD)",
+                                                   "Mean"),
+                                            var_names[[v]]$mean[3],
+                                            var_names[[v]]$mean[1],
+                                            var_names[[v]]$mean[2],
+                                            "",
+                                            ""))
 
-                # medians
-                # blanks for grouping purposes since collapes_rows didn't work
-                dat <- rbind(dat, c(v,
-                                    "Median",
-                                    round(var_names[[v]]$median[1], digits),
-                                    round(var_names[[v]]$median[2], digits),
-                                    "",
-                                    ""))
+                        # medians
+                        # blanks for grouping purposes since collapes_rows didn't work
+                        dat <- rbind(dat, c(v,
+                                            ifelse(span==TRUE,
+                                                   "Median [Q1, Q3]",
+                                                   "Median"),
+                                            var_names[[v]]$median[3],
+                                            var_names[[v]]$median[1],
+                                            var_names[[v]]$median[2],
+                                            "",
+                                            ""))
 
-        }
+                        }
+                }
 
         # store categorical rows
-        for(v in unlist(lst(cat_vec))){
-                i<-1
-                for(w in ls(var_names[[v]]$cont_table)){
-                        # for loop for w, each level of the cat variable
-                        # blanks for grouping purposes since collapes_rows didn't work
-                        dat <- rbind(dat,
-                                     c(v, w,
-                                       var_names[[v]]$cont_table[[w]]$out1,
-                                       var_names[[v]]$cont_table[[w]]$out2,
-                                       ifelse(i==1,var_names[[v]]$para_p, ""),
-                                       ifelse(i==1,var_names[[v]]$nonpara_p, "")
-                                       )
-                                     )
-                        i <- i+1
+        if(!is.null(cat_vec)){
+                # loop over each cat variables
+                for(v in unlist(lst(cat_vec))){
+                        i<-1
+                        # for loop for w, each level of the cat variable including overall
+                        for(w in ls(var_names[[v]]$cont_table)){
+                                # blanks for grouping purposes since collapes_rows didn't work
+                                dat <- rbind(dat,
+                                             c(v, w,
+                                               var_names[[v]]$cont_table[[w]]$overall,
+                                               var_names[[v]]$cont_table[[w]]$out1,
+                                               var_names[[v]]$cont_table[[w]]$out2,
+                                               ifelse(i==1,var_names[[v]]$para_p, ""),
+                                               ifelse(i==1,var_names[[v]]$nonpara_p, "")
+                                               )
+                                             )
+                                i <- i+1
+                                }
                         }
-        }
+                }
 
         # format table
         # remove placeholder first row from initialization
@@ -116,30 +138,45 @@ make_table <- function(data, outcome, num_vec, cat_vec, digits =2){
         dat<- dat %>% mutate(para_p = if_else(para_p < 0.0001,
                         "p <0.0001",
                         if_else(para_p < 0.01,
-                                formatC(para_p, digits = 2, format = "e"),
-                                formatC(para_p, digits = 2, format = "f", drop0trailing = FALSE)
+                                formatC(para_p,
+                                        digits = digits,
+                                        format = "e"),
+                                formatC(para_p,
+                                        digits = digits,
+                                        format = "fg",
+                                        drop0trailing = FALSE)
                         )
                         )
                         ) %>%
                 mutate(nonpara_p = if_else(nonpara_p < 0.0001,
                         "p <0.0001",
-                        if_else(para_p < 0.01,
-                                formatC(nonpara_p, digits = 2, format = "e"),
-                                formatC(nonpara_p, digits = 2, format = "f", drop0trailing = FALSE)
+                        if_else(nonpara_p < 0.01,
+                                formatC(nonpara_p,
+                                        digits=digits,
+                                        format="e"),
+                                formatC(nonpara_p,
+                                        digits = digits,
+                                        format = "fg",
+                                        drop0trailing = FALSE)
                                 )
                         )
                        )
+        #if total=FALSE, need to drop the overall column
+        if(total==FALSE) dat <- dat[, -3]
+        col_names <- c("",
+                       "Overall",
+                       levels(as.factor(data[[outcome]]))[1],
+                       levels(as.factor(data[[outcome]]))[2],
+                       "Parametric p-value",
+                       "Non-parametric p-value")
+        if(total==FALSE) col_names<-col_names[-2]
 
 
         # use knitr for the table
         options(knitr.kable.NA = '')
         k <- kbl(dat[,-1],
                  align = "c",
-                 col.names=c("",
-                             levels(data[[outcome]])[1],
-                             levels(data[[outcome]])[2],
-                             "Parametric p-value",
-                             "Non-parametric p-value"),
+                 col.names=col_names,
                  row.names = FALSE) %>%
                 kableExtra::kable_paper() %>%
                 kableExtra::pack_rows(index = table(dat$var)) %>%

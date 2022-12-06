@@ -4,7 +4,15 @@
 \alias{make_table}
 \title{Make table}
 \usage{
-make_table(data, outcome, num_vec, cat_vec, digits = 2)
+make_table(
+  data,
+  outcome,
+  num_vec = NULL,
+  cat_vec = NULL,
+  digits = 2,
+  span = FALSE,
+  total = FALSE
+)
 }
 \arguments{
 \item{data}{data set with a two-level outcome and numerical/categorical covariates}
@@ -16,6 +24,10 @@ make_table(data, outcome, num_vec, cat_vec, digits = 2)
 \item{cat_vec}{vector of names of categorical covariates (strings) in the data set}
 
 \item{digits}{number of digits to display, default is 2}
+
+\item{span}{boolean, for whether to include StD for numeric; default is FALSE}
+
+\item{total}{boolean, for whether to include an overall column; default is FALSE}
 }
 \value{
 A table.

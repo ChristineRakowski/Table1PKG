@@ -35,11 +35,23 @@ cat_fun <- function(data, outcome, var, digits = 2) {
         mutate(n = n()) %>%
         group_by(!!as.symbol(outcome)) %>%
         distinct(!!as.symbol(outcome), !!as.symbol(var), n) %>%
-        mutate(Per = n/sum(n), np = paste0(n, " (", round(Per * 100, digits), " %)")) %>%
+        mutate(Per = n/sum(n), np = paste0(n, " (", round(Per * 100, 0), " %)")) %>%
         select(-n, -Per) %>%
         spread(!!as.symbol(outcome), np)
 
-    # done a second time with just counts for testing 2x2 contingency table
+    # now do counts for total (optional in table)
+    overall <- data %>%
+            group_by(!!as.symbol(var)) %>%
+            mutate(n = n()) %>%
+            distinct(!!as.symbol(var), n) %>%
+            ungroup() %>%
+            mutate(Per = n/sum(n), Overall = paste0(n, " (", round(Per * 100, 0), " %)")) %>%
+            select(-n, -Per)
+
+    #combine the overall and the table by group
+    counts_wpercent <- cbind(counts_wpercent, overall[,-1])
+
+    # done a second time with just counts by outcome level for testing 2x2 contingency table
     counts <- data %>%
         group_by(!!as.symbol(outcome), !!as.symbol(var)) %>%
         tally() %>%
@@ -50,12 +62,12 @@ cat_fun <- function(data, outcome, var, digits = 2) {
 
     # store info for output in later table this includes the levels of covariate and
     # counts/percents for contingency table length of first column for number of levels
-    n <- length(counts[, 1])
-    # store counts/percent for each level in a dictionary with key equal to the level
+    n <- length(counts_wpercent[, 1])
+    # store counts/percent for each level of var in a dictionary with key equal to the level of var
     cat_info <- hash(unlist(lst(counts[,1])), unlist(lst(counts[,1])))
     for (i in 1:n) {
-        cat_info[unlist(lst(counts[,1]))[i]] <- hash(c("out1", "out2"),
-                                       c(counts_wpercent[i, 2], counts_wpercent[i, 3]))
+        cat_info[unlist(lst(counts[,1]))[i]] <- hash(c("out1", "out2", "overall"),
+                        c(counts_wpercent[i, 2], counts_wpercent[i, 3], counts_wpercent[i, 4]))
     }
 
 

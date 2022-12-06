@@ -4,7 +4,7 @@
 \alias{numeric_fun}
 \title{Numeric summary}
 \usage{
-numeric_fun(data, outcome, var)
+numeric_fun(data, outcome, var, digits = 2, span = FALSE)
 }
 \arguments{
 \item{data}{data set with a two-level outcome and numerical/categorical covariates}
@@ -12,14 +12,20 @@ numeric_fun(data, outcome, var)
 \item{outcome}{name of categorical grouping variable, must have two levels, string}
 
 \item{var}{name of numerical covariate in the data set, string}
+
+\item{digits}{for rounding on percents, default is 2}
+
+\item{span}{boolean, for whether to include StD ; default is FALSE}
 }
 \value{
 A list of six items.
 \itemize{
 \item the \code{outcome} variable and its levels
-\item \code{N} a vector of counts of \code{var}, sorted by levels of \code{outcome}
-\item \code{mean} a vector of means of \code{var}, sorted by levels of \code{outcome}
-\item \code{median} a vector of medians of \code{var}, sorted by levels of \code{outcome}
+\item \code{N} a vector of counts of \code{var}, sorted by levels of \code{outcome} and then overall
+\item \code{mean} a vector of means of \code{var}, sorted by levels of \code{outcome} and then overall;
+includes (SD) if \code{span} = TRUE
+\item \code{median} a vector of medians of \code{var}, sorted by levels of \code{outcome} and then overall;
+includes Q1 and Q3 if \code{span} = TRUE
 \item \code{para_pval} is the parametric p-value for test of differences of \code{var} using an
 ANOVA test
 \item \code{nonpara_pval} is a non-parametric p-value for test of differences of \code{var} using

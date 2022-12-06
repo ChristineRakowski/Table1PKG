@@ -1,15 +1,15 @@
 test_that("test if mean of numeric_fun works", {
-        expect_equal(numeric_fun(data=FEV, outcome="smoke", var="age")$mean, c(9.534805, 13.523077))
+        expect_equal(numeric_fun(data=FEV, outcome="smoke", var="age")$mean[1:2], c(9.53, 13.52))
 }
 )
 
 test_that("test if median of numeric_fun works", {
-        expect_equal(numeric_fun(data=FEV, outcome="smoke", var="age")$median, c(9, 13))
+        expect_equal(numeric_fun(data=FEV, outcome="smoke", var="age")$median[1:2], c(9, 13))
 }
 )
 
 test_that("test if N of numeric_fun works", {
-        expect_equal(numeric_fun(data=FEV, outcome="smoke", var="age")$N, c(589, 65))
+        expect_equal(numeric_fun(data=FEV, outcome="smoke", var="age")$N[1:2], c(589, 65))
 }
 )
 
